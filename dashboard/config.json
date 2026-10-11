@@ -7,30 +7,159 @@
       "default_location": "Kiosk",
       "inbox": "inbox/vectron",
       "columns": {
-        "time":     ["datum/zeit", "datum", "zeit", "date", "timestamp", "bondatum", "buchungszeit"],
-        "article":  ["artikel", "artikelname", "plu-name", "bezeichnung", "article"],
-        "category": ["warengruppe", "wg", "kategorie", "category"],
-        "qty":      ["menge", "anzahl", "qty", "quantity"],
-        "amount":   ["umsatz", "brutto", "betrag", "summe", "gesamt", "amount"],
-        "payment":  ["zahlart", "zahlungsart", "payment"],
-        "location": ["kasse", "standort", "filiale"],
-        "id":       ["bonnummer", "beleg", "belegnr", "bon-nr", "id"]
-      }
+        "time": [
+          "datum/zeit",
+          "datum",
+          "zeit",
+          "date",
+          "timestamp",
+          "bondatum",
+          "buchungszeit"
+        ],
+        "article": [
+          "artikel",
+          "artikelname",
+          "plu-name",
+          "bezeichnung",
+          "article"
+        ],
+        "category": [
+          "warengruppe",
+          "wg",
+          "kategorie",
+          "category"
+        ],
+        "qty": [
+          "menge",
+          "anzahl",
+          "qty",
+          "quantity"
+        ],
+        "amount": [
+          "umsatz",
+          "brutto",
+          "betrag",
+          "summe",
+          "gesamt",
+          "amount"
+        ],
+        "payment": [
+          "zahlart",
+          "zahlungsart",
+          "payment"
+        ],
+        "location": [
+          "kasse",
+          "standort",
+          "filiale"
+        ],
+        "id": [
+          "bonnummer",
+          "beleg",
+          "belegnr",
+          "bon-nr",
+          "id"
+        ]
+      },
+      "fetch": [
+        {
+          "type": "imap",
+          "enabled": false,
+          "host": "imap.example.de",
+          "user": "dashboard@example.de",
+          "password_env": "DASH_MAIL_PW",
+          "from_contains": "vectron"
+        },
+        {
+          "type": "ftp",
+          "enabled": false,
+          "host": "ftp.example.de",
+          "user": "vectron",
+          "password_env": "VECTRON_FTP_PW",
+          "path": "/export",
+          "tls": true
+        }
+      ]
     },
     "televend": {
       "label": "Automaten (Televend)",
       "default_location": "Automat",
       "inbox": "inbox/televend",
       "columns": {
-        "time":     ["zeit", "datum/zeit", "datum", "verkaufszeit", "timestamp", "date", "time"],
-        "article":  ["produkt", "artikel", "produktname", "product", "article"],
-        "category": ["warengruppe", "kategorie", "category", "typ"],
-        "qty":      ["menge", "anzahl", "qty", "quantity"],
-        "amount":   ["preis", "umsatz", "betrag", "summe", "amount", "price"],
-        "payment":  ["zahlart", "zahlungsart", "bezahlung", "payment"],
-        "location": ["automat", "gerät", "geraet", "standort", "maschine", "machine"],
-        "id":       ["verkaufsnr", "transaktion", "id", "nr"]
-      }
+        "time": [
+          "zeit",
+          "datum/zeit",
+          "datum",
+          "verkaufszeit",
+          "timestamp",
+          "date",
+          "time"
+        ],
+        "article": [
+          "produkt",
+          "artikel",
+          "produktname",
+          "product",
+          "article"
+        ],
+        "category": [
+          "warengruppe",
+          "kategorie",
+          "category",
+          "typ"
+        ],
+        "qty": [
+          "menge",
+          "anzahl",
+          "qty",
+          "quantity"
+        ],
+        "amount": [
+          "preis",
+          "umsatz",
+          "betrag",
+          "summe",
+          "amount",
+          "price"
+        ],
+        "payment": [
+          "zahlart",
+          "zahlungsart",
+          "bezahlung",
+          "payment"
+        ],
+        "location": [
+          "automat",
+          "gerät",
+          "geraet",
+          "standort",
+          "maschine",
+          "machine"
+        ],
+        "id": [
+          "verkaufsnr",
+          "transaktion",
+          "id",
+          "nr"
+        ]
+      },
+      "fetch": [
+        {
+          "type": "imap",
+          "enabled": false,
+          "host": "imap.example.de",
+          "user": "dashboard@example.de",
+          "password_env": "DASH_MAIL_PW",
+          "from_contains": "televend"
+        },
+        {
+          "type": "http",
+          "enabled": false,
+          "url": "https://BITTE-EXPORT-LINK?von={from}&bis={to}",
+          "token_env": "TELEVEND_TOKEN",
+          "days_back": 3
+        }
+      ]
     }
   }
 }

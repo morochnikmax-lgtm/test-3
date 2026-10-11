@@ -25,3 +25,11 @@ Doppelte Zeilen werden erkannt – dieselbe Datei kann bedenkenlos mehrfach geli
 Die genauen Spaltenüberschriften hängen von Ihrer Vectron-/Televend-Konfiguration ab. In `config.json`
 unter `columns` stehen pro Feld mögliche Überschriften (klein geschrieben). Weicht Ihr Export ab,
 einfach den Namen ergänzen. Erkannt werden Trennzeichen `;` `,` Tab, Dezimalkomma und Datum `TT.MM.JJJJ HH:MM`.
+
+## Automatische Datenübernahme (ohne Handarbeit)
+In `config.json` pro System unter `fetch` aktivieren (`"enabled": true`), Passwörter nur als Umgebungsvariable (`*_env`):
+- **imap** – Vectron/Televend verschicken ihre Berichte planmäßig per E-Mail (CSV-Anhang) an ein eigenes Postfach; das Dashboard liest es ein.
+- **ftp** – der Export landet auf einem FTP(S)-Ordner; neue Dateien werden geholt.
+- **http** – Export-/Cloud-Link, `{from}`/`{to}` werden durch Datum ersetzt, optional mit Token.
+- **Sender auf dem Kassen-PC:** `python3 agent/push_folder.py <Exportordner> vectron http://<dashboard>:8080 [Token]`
+Abgerufen wird alle 5 Minuten; Doppelte werden ignoriert. (Getestet: HTTP und Ordner/Upload; IMAP/FTP noch nicht gegen echte Server.)

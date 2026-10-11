@@ -125,9 +125,81 @@ def scan_inboxes():
             print(f"[import] {source}/{name}: {res}")
 
 
+# ---------- Automatische Abholung ----------
+def secret(cfg, key):
+    return os.environ.get(cfg.get(key + "_env", ""), "") or cfg.get(key, "")
+
+
+def fetch_imap(source, f):
+    """Liest ungelesene Mails mit CSV-Anhang (Berichtsversand von Vectron/Televend)."""
+    import imaplib, email
+    m = imaplib.IMAP4_SSL(f["host"], f.get("port", 993))
+    m.login(f["user"], secret(f, "password"))
+    m.select(f.get("folder", "INBOX"))
+    crit = ["UNSEEN"] + (["FROM", f'"{f["from_contains"]}"'] if f.get("from_contains") else []) \
+        + (["SUBJECT", f'"{f["subject_contains"]}"'] if f.get("subject_contains") else [])
+    _, ids = m.search(None, *crit)
+    for i in ids[0].split():
+        _, data = m.fetch(i, "(RFC822)")
+        msg = email.message_from_bytes(data[0][1])
+        ok = True
+        for part in msg.walk():
+            name = part.get_filename() or ""
+            if name.lower().endswith((".csv", ".txt")):
+                raw = part.get_payload(decode=True)
+                try: text = raw.decode("utf-8")
+                except UnicodeDecodeError: text = raw.decode("cp1252")
+                print(f"[mail] {source}/{name}: {ingest_csv(source, text, 'mail:' + name)}")
+        m.store(i, "+FLAGS", "\\Seen")
+    m.logout()
+
+
+def fetch_ftp(source, f):
+    """Lädt neue CSV-Dateien von einem FTP-/FTPS-Ordner in die Inbox."""
+    import ftplib
+    ftp = (ftplib.FTP_TLS if f.get("tls") else ftplib.FTP)(f["host"], f.get("port", 21), timeout=30)
+    ftp.login(f["user"], secret(f, "password"))
+    if f.get("tls"): ftp.prot_p()
+    ftp.cwd(f.get("path", "/"))
+    dest = os.path.join(BASE, CFG["sources"][source]["inbox"])
+    for name in ftp.nlst():
+        if name.lower().endswith((".csv", ".txt")) and not os.path.exists(os.path.join(dest, name)):
+            with open(os.path.join(dest, name), "wb") as fh:
+                ftp.retrbinary("RETR " + name, fh.write)
+    ftp.quit()
+
+
+def fetch_http(source, f):
+    """Ruft eine URL ab (CSV-Export-Link / Cloud-Schnittstelle mit Token)."""
+    import urllib.request
+    url = f["url"].replace("{from}", (datetime.now() - timedelta(days=f.get("days_back", 3))).strftime("%Y-%m-%d")) \
+                  .replace("{to}", datetime.now().strftime("%Y-%m-%d"))
+    req = urllib.request.Request(url)
+    if secret(f, "token"):
+        req.add_header(f.get("header", "Authorization"), f.get("prefix", "Bearer ") + secret(f, "token"))
+    raw = urllib.request.urlopen(req, timeout=60).read()
+    try: text = raw.decode("utf-8")
+    except UnicodeDecodeError: text = raw.decode("cp1252")
+    print(f"[http] {source}: {ingest_csv(source, text, 'http-pull')}")
+
+
+FETCHERS = {"imap": fetch_imap, "ftp": fetch_ftp, "http": fetch_http}
+
+
+def fetch_all():
+    for source, scfg in CFG["sources"].items():
+        for f in scfg.get("fetch", []):
+            if f.get("enabled", True):
+                try:
+                    FETCHERS[f["type"]](source, f)
+                except Exception as e:
+                    print(f"[fetch] {source}/{f['type']} Fehler: {e}")
+
+
 def import_loop():
     while True:
         try:
+            fetch_all()
             scan_inboxes()
         except Exception as e:  # nie den Server stoppen
             print("[import] Fehler:", e)
