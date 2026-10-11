@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unternehmens-Dashboard</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b2430;--mut:#6b7686;--bd:#e3e6eb;--k:#2563eb;--a:#f59e0b;--up:#15803d;--dn:#b91c1c}
+@media(prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#18202b;--tx:#e8edf3;--mut:#93a0b1;--bd:#263140;--k:#60a5fa;--a:#fbbf24;--up:#4ade80;--dn:#f87171}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px}
+h1{font-size:20px;margin:0}main{padding:0 16px 24px;max-width:1300px;margin:auto}
+.btns button{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:6px 12px;border-radius:8px;cursor:pointer}
+.btns button.on{background:var(--k);color:#fff;border-color:var(--k)}
+.grid{display:grid;gap:12px;margin-bottom:12px}.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.card h2{font-size:13px;color:var(--mut);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.big{font-size:28px;font-weight:700}.sub{color:var(--mut);font-size:13px}.up{color:var(--up)}.dn{color:var(--dn)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 4px;text-align:left;border-bottom:1px solid var(--bd);font-size:14px}
+th{color:var(--mut);font-weight:600;font-size:12px}td.r,th.r{text-align:right}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--mut);font-size:11px}
+.bar{height:6px;background:var(--bd);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%}
+.warn{color:var(--dn)}
+</style></head><body>
+<header><h1>🏥 Krankenhaus-Geschäft – Überblick</h1>
+<div class="btns" id="rng"><button data-d="7">7 Tage</button><button data-d="30" class="on">30 Tage</button><button data-d="90">90 Tage</button></div></header>
+<main>
+<div class="grid g4" id="kpis"></div>
+<div class="grid g2"><div class="card"><h2>Umsatz pro Tag</h2><div id="daily"></div><div id="leg"></div></div>
+<div class="card"><h2>Umsatz nach Uhrzeit</h2><div id="hourly"></div></div></div>
+<div class="grid g2"><div class="card"><h2>Standorte / Automaten</h2><div id="loc"></div></div>
+<div class="card"><h2>Top-Artikel</h2><div id="top"></div></div></div>
+<div class="grid g2"><div class="card"><h2>Warengruppen</h2><div id="cat"></div></div>
+<div class="card"><h2>Zahlarten &amp; Datenstand</h2><div id="pay"></div><div id="fresh" class="sub" style="margin-top:10px"></div></div></div>
+</main>
+<script>
+const COL={vectron:'var(--k)',televend:'var(--a)'};
+const $=id=>document.getElementById(id);
+const eur=v=>(v||0).toLocaleString('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const eur2=v=>(v||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+const nf=v=>Math.round(v||0).toLocaleString('de-DE');
+let days=30;
+function delta(c,p){if(!p)return'';const d=(c-p)/p*100;return`<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1).replace('.',',')} %</span> ggü. Vorperiode`}
+function stacked(rows,key,keys,fmtX,W=560,H=220){
+  const xs=[...new Set(rows.map(r=>r[key]))].sort((a,b)=>a-b||(a>b?1:-1));
+  if(!xs.length)return'<div class="sub">Keine Daten</div>';
+  const tot=xs.map(x=>keys.map(k=>(rows.find(r=>r[key]===x&&r.source===k)||{}).revenue||0));
+  const max=Math.max(...tot.map(t=>t.reduce((a,b)=>a+b,0)))||1,pl=44,pb=22,bw=(W-pl)/xs.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  for(let i=0;i<=4;i++){const y=(H-pb)*(1-i/4);s+=`<line x1="${pl}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--bd)"/><text x="${pl-4}" y="${y+4}" text-anchor="end">${nf(max*i/4)}</text>`}
+  xs.forEach((x,i)=>{let y=H-pb;keys.forEach((k,j)=>{const h=tot[i][j]/max*(H-pb);y-=h;
+    s+=`<rect x="${pl+i*bw+1}" y="${y}" width="${Math.max(bw-2,1)}" height="${h}" fill="${COL[k]}"><title>${fmtX(x)} · ${eur(tot[i][j])}</title></rect>`});
+    if(xs.length<=24||i%Math.ceil(xs.length/12)==0)s+=`<text x="${pl+i*bw+bw/2}" y="${H-6}" text-anchor="middle">${fmtX(x)}</text>`});
+  return s+'</svg>'}
+function table(head,rows){return`<table><tr>${head.map((h,i)=>`<th class="${i?'r':''}">${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${i?'r':''}">${c}</td>`).join('')}</tr>`).join('')}</table>`}
+const dot=s=>`<span class="dot" style="background:${COL[s]}"></span>`;
+async function load(){
+  const to=new Date(),from=new Date(Date.now()-(days-1)*864e5),f=d=>d.toLocaleDateString('sv');
+  const d=await (await fetch(`/api/summary?from=${f(from)}&to=${f(to)}`)).json();
+  const L=d.labels,keys=Object.keys(L),z={revenue:0,tx:0,units:0};
+  const cur=s=>d.current[s]||z,prev=s=>d.previous[s]||z,tod=s=>d.today[s]||z;
+  const sum=(o,k)=>keys.reduce((a,s)=>a+(o(s)[k]||0),0);
+  const cT=sum(cur,'revenue'),pT=sum(prev,'revenue');
+  let h=`<div class="card"><h2>Umsatz heute</h2><div class="big">${eur(sum(tod,'revenue'))}</div><div class="sub">${keys.map(s=>`${dot(s)}${eur(tod(s).revenue)}`).join(' &nbsp; ')}</div></div>
+  <div class="card"><h2>Umsatz Gesamt (${d.range.days} Tage)</h2><div class="big">${eur(cT)}</div><div class="sub">${delta(cT,pT)}</div></div>`;
+  keys.forEach(s=>h+=`<div class="card"><h2>${dot(s)}${L[s]}</h2><div class="big">${eur(cur(s).revenue)}</div>
+    <div class="sub">${delta(cur(s).revenue,prev(s).revenue)}<br>${nf(cur(s).tx)} Verkäufe · Ø ${eur2(cur(s).revenue/(cur(s).tx||1))} · Ø ${eur(cur(s).revenue/d.range.days)}/Tag</div>
+    <div class="bar" style="margin-top:8px"><i style="width:${cT?cur(s).revenue/cT*100:0}%;background:${COL[s]}"></i></div><div class="sub">${cT?(cur(s).revenue/cT*100).toFixed(0):0} % vom Gesamtumsatz</div></div>`);
+  $('kpis').innerHTML=h;
+  $('leg').innerHTML=`<div class="sub">${keys.map(s=>dot(s)+L[s]).join(' &nbsp; ')}</div>`;
+  $('daily').innerHTML=stacked(d.daily,'day',keys,x=>x.slice(8)+'.'+x.slice(5,7)+'.');
+  $('hourly').innerHTML=stacked(d.hourly,'hour',keys,x=>x+'h');
+  const now=Date.now();
+  $('loc').innerHTML=table(['Standort','Umsatz','Stück','Letzter Verkauf'],d.locations.map(l=>{
+    const old=now-new Date(l.last_sale.replace(' ','T'))>864e5*(l.source==='televend'?1:2);
+    return[`${dot(l.source)}${l.location}`,eur(l.revenue),nf(l.units),`<span class="${old?'warn':''}">${l.last_sale.slice(5,16).replace('-','.').replace(' ',' · ')}${old?' ⚠':''}</span>`]}));
+  $('top').innerHTML=table(['Artikel','Stück','Umsatz'],d.top_articles.map(a=>[`${dot(a.source)}${a.article}`,nf(a.units),eur(a.revenue)]));
+  $('cat').innerHTML=table(['Warengruppe','Umsatz'],d.categories.map(c=>[`${dot(c.source)}${c.category}`,eur(c.revenue)]));
+  $('pay').innerHTML=table(['Zahlart','Umsatz'],d.payments.map(c=>[`${dot(c.source)}${c.payment}`,eur(c.revenue)]));
+  $('fresh').innerHTML=keys.map(s=>{const f=d.freshness[s];return`${dot(s)}${L[s]}: `+(f?`letzter Import ${f.last_import.slice(0,16)}, letzter Verkauf ${(f.last_sale||'–').slice(0,16)}`:'<span class="warn">noch keine Daten</span>')}).join('<br>');
+}
+$('rng').onclick=e=>{if(!e.target.dataset.d)return;days=+e.target.dataset.d;[...$('rng').children].forEach(b=>b.classList.toggle('on',b===e.target));load()};
+load();setInterval(load,60000);
+</script></body></html>

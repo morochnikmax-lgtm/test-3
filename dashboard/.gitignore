@@ -1,0 +1,4 @@
+dashboard.db
+inbox/*/*
+!inbox/*/.gitkeep
+__pycache__/

@@ -1,0 +1,36 @@
+{
+  "port": 8080,
+  "import_interval_seconds": 300,
+  "sources": {
+    "vectron": {
+      "label": "Kiosk (Vectron)",
+      "default_location": "Kiosk",
+      "inbox": "inbox/vectron",
+      "columns": {
+        "time":     ["datum/zeit", "datum", "zeit", "date", "timestamp", "bondatum", "buchungszeit"],
+        "article":  ["artikel", "artikelname", "plu-name", "bezeichnung", "article"],
+        "category": ["warengruppe", "wg", "kategorie", "category"],
+        "qty":      ["menge", "anzahl", "qty", "quantity"],
+        "amount":   ["umsatz", "brutto", "betrag", "summe", "gesamt", "amount"],
+        "payment":  ["zahlart", "zahlungsart", "payment"],
+        "location": ["kasse", "standort", "filiale"],
+        "id":       ["bonnummer", "beleg", "belegnr", "bon-nr", "id"]
+      }
+    },
+    "televend": {
+      "label": "Automaten (Televend)",
+      "default_location": "Automat",
+      "inbox": "inbox/televend",
+      "columns": {
+        "time":     ["zeit", "datum/zeit", "datum", "verkaufszeit", "timestamp", "date", "time"],
+        "article":  ["produkt", "artikel", "produktname", "product", "article"],
+        "category": ["warengruppe", "kategorie", "category", "typ"],
+        "qty":      ["menge", "anzahl", "qty", "quantity"],
+        "amount":   ["preis", "umsatz", "betrag", "summe", "amount", "price"],
+        "payment":  ["zahlart", "zahlungsart", "bezahlung", "payment"],
+        "location": ["automat", "gerät", "geraet", "standort", "maschine", "machine"],
+        "id":       ["verkaufsnr", "transaktion", "id", "nr"]
+      }
+    }
+  }
+}
